@@ -1,4 +1,4 @@
-FROM php:8.2.35-apache-bookworm
+FROM php:8.5.12-apache-trixie
 
 ENV ACCEPT_EULA=Y
 
@@ -19,6 +19,7 @@ libzip-dev \
 zlib1g-dev \
 apt-transport-https \
 mariadb-client \
+libpq-dev \
 libapache2-mod-xsendfile \
 locales \
 gettext \
@@ -28,8 +29,8 @@ libmagickwand-dev
 
 
 # Packages for MicrosoftSQL Server Connection
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft-2025.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+RUN curl -fsSL https://packages.microsoft.com/config/debian/13/prod.list > /etc/apt/sources.list.d/mssql-release.list
 
 RUN apt-get -y --fix-missing update && apt-get -y --fix-missing upgrade && ACCEPT_EULA=Y apt-get -y --fix-missing install \
 libonig-dev \
@@ -43,6 +44,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Other PHP7 Extensions
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-install mbstring pdo
+RUN docker-php-ext-install pgsql pdo_pgsql
 
 RUN docker-php-ext-install curl
 RUN docker-php-ext-install gettext
@@ -67,8 +69,7 @@ RUN touch /usr/local/etc/php/conf.d/uploads.ini \
 RUN ln -s /usr/local/bin/php /usr/bin/php
 
 # Configure MicrosoftSQL Server packages
-# SQLSRV 5.13+ requires PHP 8.3; keep the PHP 8.2-compatible release.
-RUN pecl install sqlsrv-5.12.0 pdo_sqlsrv-5.12.0
+RUN pecl install sqlsrv-5.13.3 pdo_sqlsrv-5.13.3
 
 RUN docker-php-ext-enable sqlsrv pdo_sqlsrv
 RUN sed -i 's/MinProtocol = TLSv1.2/MinProtocol = TLSv1.0/' /etc/ssl/openssl.cnf
